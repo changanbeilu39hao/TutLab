@@ -1,0 +1,15 @@
+name = "tutlab-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-18"
+
+[vars]
+APP_TZ = "Australia/Melbourne"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_MODEL = "deepseek-chat"
+LLM_TIMEOUT_MS = "12000"
+LLM_MAX_TOKENS = "1200"
+LLM_TEMPERATURE = "0.2"
+IMPERSONATION_TTL_MIN = "30"
+DEBUG_LLM = "false"
+
+# Local values and production secrets are loaded from .env or wrangler secrets.
