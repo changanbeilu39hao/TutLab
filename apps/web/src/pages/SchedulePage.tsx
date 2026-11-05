@@ -98,15 +98,19 @@ export function SchedulePage() {
             return (
               <section className="card schedule-day" key={day}>
                 <div className="row-between schedule-day-heading">
-                  <h2 className="card-title">{formatDate(day)}</h2>
-                  {day === melbourneToday() ? <span className="badge">今天</span> : null}
+                  <h2 className={`card-title${day === melbourneToday() ? " schedule-today" : ""}`}>
+                    {formatDate(day)}
+                  </h2>
                 </div>
                 <div className="schedule-day-sessions">
                   {daySessions.map((session) => {
                     const ownTeacherSession =
                       profile?.role === "teacher" && profile.id === session.teacher_id;
                     return (
-                      <article className="schedule-session" key={session.id}>
+                      <article
+                        className={`schedule-session${ownTeacherSession ? " schedule-own-session" : ""}`}
+                        key={session.id}
+                      >
                         <div className="schedule-session-time">
                           {formatTime(session.starts_at)}–{formatTime(session.ends_at)}
                         </div>

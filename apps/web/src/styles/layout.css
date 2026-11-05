@@ -240,6 +240,10 @@
   margin-bottom: 12px;
 }
 
+.schedule-day-heading .schedule-today {
+  color: var(--info);
+}
+
 .schedule-day-sessions {
   display: grid;
   gap: 12px;
@@ -249,6 +253,12 @@
   min-width: 0;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+}
+
+.schedule-own-session {
+  padding: 10px;
+  border: 1px solid #86a65b;
+  border-radius: var(--radius);
 }
 
 .schedule-session-time {
