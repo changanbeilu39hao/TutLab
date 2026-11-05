@@ -1,26 +1,41 @@
+volumes:
+  tutlab_node_modules:
+
+networks:
+  supabase:
+    external: true
+    name: supabase_network_tutlab
+
 services:
   web:
-    image: node:22-bookworm
+    image: public.ecr.aws/docker/library/node:22-bookworm
+    restart: on-failure
     working_dir: /workspace
     volumes:
       - .:/workspace
+      - tutlab_node_modules:/workspace/node_modules
     ports:
       - "${WEB_PORT:-5173}:5173"
     environment:
       VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
       VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
-    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm --filter web dev -- --host 0.0.0.0"
+    command: sh -c "corepack enable && if [ ! -f /workspace/node_modules/.tutlab-installed ]; then NODE_OPTIONS=--max-old-space-size=256 pnpm install --frozen-lockfile --prefer-offline --child-concurrency=1 --network-concurrency=1 --ignore-scripts --filter @tutlab/shared --filter web && NODE_OPTIONS=--max-old-space-size=256 pnpm install --frozen-lockfile --prefer-offline --child-concurrency=1 --network-concurrency=1 --ignore-scripts --filter @tutlab/shared --filter api && touch /workspace/node_modules/.tutlab-installed; fi && pnpm --filter web exec vite --host 0.0.0.0"
 
   api:
-    image: node:22-bookworm
+    image: public.ecr.aws/docker/library/node:22-bookworm
+    restart: on-failure
     working_dir: /workspace
+    networks:
+      - default
+      - supabase
     volumes:
       - .:/workspace
+      - tutlab_node_modules:/workspace/node_modules
     ports:
       - "${API_PORT:-8787}:8787"
     environment:
-      SUPABASE_URL: http://host.docker.internal:54421
+      SUPABASE_URL: http://supabase_kong_tutlab:8000
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       APP_TZ: ${APP_TZ:-Australia/Melbourne}
@@ -32,4 +47,6 @@ services:
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
       IMPERSONATION_TTL_MIN: ${IMPERSONATION_TTL_MIN:-30}
       DEBUG_LLM: ${DEBUG_LLM:-false}
-    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm --filter api dev -- --ip 0.0.0.0"
+    depends_on:
+      - web
+    command: sh -c "corepack enable && while [ ! -f /workspace/node_modules/.tutlab-installed ]; do sleep 2; done && pnpm --filter api exec wrangler dev --port 8787 --ip 0.0.0.0 --var SUPABASE_URL:$SUPABASE_URL --var SUPABASE_SERVICE_ROLE_KEY:$SUPABASE_SERVICE_ROLE_KEY --var SUPABASE_JWT_SECRET:$SUPABASE_JWT_SECRET --var APP_TZ:$APP_TZ --var DEEPSEEK_API_KEY:$DEEPSEEK_API_KEY --var DEEPSEEK_BASE_URL:$DEEPSEEK_BASE_URL --var DEEPSEEK_MODEL:$DEEPSEEK_MODEL --var LLM_TIMEOUT_MS:$LLM_TIMEOUT_MS --var LLM_MAX_TOKENS:$LLM_MAX_TOKENS --var LLM_TEMPERATURE:$LLM_TEMPERATURE --var IMPERSONATION_TTL_MIN:$IMPERSONATION_TTL_MIN --var DEBUG_LLM:$DEBUG_LLM"

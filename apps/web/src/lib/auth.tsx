@@ -184,6 +184,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    if (!impersonation && meQuery.error instanceof ApiError && meQuery.error.status === 401) {
+      void supabase.auth.signOut({ scope: "local" });
+    }
+  }, [impersonation, meQuery.error]);
+
+  useEffect(() => {
     if (!impersonation) return;
     const checkExpiry = () => {
       if (Date.parse(impersonation.expiresAt) <= Date.now()) {
@@ -202,7 +208,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await apiRequest<Profile>("/api/me", {
         token: data.session.access_token,
       });
-      queryClient.clear();
       queryClient.setQueryData(["me", data.user.id], profile);
       return profile;
     },

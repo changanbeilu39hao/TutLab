@@ -144,7 +144,7 @@ async function feedbackForSession(
       .from("parent_messages")
       .select("student_id,body,state")
       .eq("feedback_raw_id", raw.id)
-      .order("created_at"),
+      .order("id"),
     supabase
       .from("concerns")
       .select("student_id,level,reason")

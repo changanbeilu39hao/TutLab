@@ -1,6 +1,6 @@
 # tutlab
 
-Austin Education 的课后 30 秒垂直切片：教师查看今日课次、完成点名与课时扣减，再把一段课堂口述整理成家长草稿、学管关注和教学记录。管理员可以临时切换到同校区教师视角，所有模拟操作保留审计记录。
+tutlab 的课后 30 秒垂直切片：教师查看今日课次、完成点名与课时扣减，再把一段课堂口述整理成家长草稿、学管关注和教学记录。管理员可以临时切换到同校区教师视角，所有模拟操作保留审计记录。
 
 ## 1. 如何跑起来
 
@@ -54,7 +54,13 @@ corepack pnpm install
 
 ### Docker 启动
 
-需要 Docker 和启用了 Corepack 的 Node.js；Supabase CLI 已作为项目开发依赖安装。Supabase Postgres/Auth/Studio 与 Web/API 均通过 Docker 运行：
+需要 Docker 和启用了 Corepack 的 Node.js；Supabase CLI 已作为项目开发依赖安装。首次运行先启动 Supabase，并把输出中的 `ANON_KEY`、`SERVICE_ROLE_KEY`、`JWT_SECRET` 分别填入 `.env` 的对应变量（两个 VITE 变量只使用 anon key）：
+
+```bash
+corepack pnpm supabase start
+```
+
+随后 Supabase Postgres/Auth/Studio 与 Web/API 均通过 Docker 运行：
 
 ```bash
 make dev
@@ -230,7 +236,6 @@ curl -sS -X POST -H "Authorization: Bearer $KEVIN" \
 
 - 使用编码 AI 协助整理数据库迁移、RLS、事务函数、Hono API、React 页面、LLM 输出校验、Docker 配置和本文档；实现后通过 TypeScript、ESLint 和 curl 场景检查关键约束。
 - DeepSeek 只用于 `POST /api/sessions/:id/feedback`：输入教师原文与必要的学生 ID/姓名，输出结构化课堂反馈。key 永不进入浏览器。
-- 未采纳“增加教室字段以填满课次卡片”的建议：需求已确认去除全部教室内容，因此不增加表字段、API 属性或 UI。
 - 未采纳“把余额 1 出席直接判为不足”的建议：它与非负流水约束冲突。正确行为是扣到 0，余额 0 时才拒绝。
 - 未采纳“家长草稿直接调用外部发送服务”的建议：本切片只在二次确认后把状态改为 `sent`，实际发送仍由人工完成。
 

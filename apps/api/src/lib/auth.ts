@@ -100,7 +100,10 @@ async function loadProfile(env: WorkerEnv, id: string): Promise<Profile> {
     .select("id,role,display_name,campus")
     .eq("id", id)
     .maybeSingle();
-  if (error || !data) throw unauthorized();
+  if (error || !data) {
+    console.error("Profile authorization lookup failed", error?.message ?? "profile not found", id);
+    throw unauthorized();
+  }
   const row = data as { id: string; role: string; display_name: string; campus: string };
   const role = roleSchema.safeParse(row.role);
   if (!role.success) throw unauthorized();
@@ -124,7 +127,14 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       if (!claims.sub) throw new Error("Missing subject");
       subject = claims.sub;
     } catch {
-      throw unauthorized();
+      const supabase = createAdminClient(c.env);
+      const { data, error } = await supabase.auth.getUser(token);
+      if (error || !data.user) {
+        console.error("Supabase user verification failed", error?.message ?? "user not found");
+        throw unauthorized();
+      }
+      subject = data.user.id;
+      claims = { sub: subject };
     }
   } else {
     let locallyVerified: JWTPayload | null = null;
@@ -141,7 +151,10 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     } else {
       const supabase = createAdminClient(c.env);
       const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) throw unauthorized();
+      if (error || !data.user) {
+        console.error("Supabase user verification failed", error?.message ?? "user not found");
+        throw unauthorized();
+      }
       subject = data.user.id;
       claims = { sub: subject };
     }

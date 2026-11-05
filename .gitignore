@@ -4,6 +4,7 @@
 .dev.vars
 **/.dev.vars
 node_modules/
+/.pnpm-store/
 dist/
 .wrangler/
 *.log
