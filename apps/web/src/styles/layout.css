@@ -263,6 +263,7 @@
 
 .schedule-completed-session {
   padding: 10px;
+  color: var(--text-2);
   background: var(--panel-2);
   border-radius: var(--radius);
 }
