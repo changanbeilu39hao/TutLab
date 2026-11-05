@@ -1,4 +1,5 @@
 import {
+  attendanceKindSchema,
   attendanceRequestSchema,
   type AttendanceKind,
   type AttendanceRequest,
@@ -21,6 +22,25 @@ const attendanceOrder: AttendanceKind[] = ["present", "absent", "leave", "trial"
 
 type Selections = Record<string, AttendanceKind | undefined>;
 
+function readStoredSelections(sessionId: string, roster: RosterStudent[]): Selections {
+  let stored: Record<string, unknown> = {};
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(`tutlab.attendance.${sessionId}`) ?? "{}");
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      stored = value as Record<string, unknown>;
+    }
+  } catch {
+    stored = {};
+  }
+  return Object.fromEntries(roster.map((student) => {
+    const saved = attendanceKindSchema.safeParse(stored[student.student_id]);
+    return [
+      student.student_id,
+      saved.success ? saved.data : student.attendance?.status ?? (student.is_trial ? "trial" : undefined),
+    ];
+  }));
+}
+
 export function AttendanceSection({
   sessionId,
   roster,
@@ -30,20 +50,20 @@ export function AttendanceSection({
 }) {
   const { request } = useAuth();
   const queryClient = useQueryClient();
-  const [selections, setSelections] = useState<Selections>({});
+  const [selections, setSelections] = useState<Selections>(() => readStoredSelections(sessionId, roster));
   const [saved, setSaved] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSelections(
-      Object.fromEntries(
-        roster.map((student) => [
-          student.student_id,
-          student.attendance?.status ?? (student.is_trial ? "trial" : undefined),
-        ]),
-      ),
-    );
+    setSelections((current) => Object.fromEntries(roster.map((student) => [
+      student.student_id,
+      current[student.student_id] ?? student.attendance?.status ?? (student.is_trial ? "trial" : undefined),
+    ])));
   }, [roster]);
+
+  useEffect(() => {
+    localStorage.setItem(`tutlab.attendance.${sessionId}`, JSON.stringify(selections));
+  }, [selections, sessionId]);
 
   const attendanceMutation = useMutation({
     mutationFn: (items: AttendanceRequest["items"]) =>

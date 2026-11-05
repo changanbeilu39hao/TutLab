@@ -20,7 +20,7 @@ services:
     ports:
       - "${API_PORT:-8787}:8787"
     environment:
-      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_URL: http://host.docker.internal:54421
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       APP_TZ: ${APP_TZ:-Australia/Melbourne}

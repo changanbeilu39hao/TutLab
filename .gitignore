@@ -8,6 +8,8 @@ dist/
 .wrangler/
 *.log
 .DS_Store
+/supabase/.branches/
+/supabase/.temp/
 /BUILD_PROMPT.md
 /AGENT_DESIGN.md
 /theme.css

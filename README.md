@@ -10,8 +10,10 @@ Austin Education 的课后 30 秒垂直切片：教师查看今日课次、完�
 |---|---|
 | Web | http://localhost:5173 |
 | Worker API | http://127.0.0.1:8787/api |
-| Supabase API | http://127.0.0.1:54321 |
-| Supabase Studio | http://127.0.0.1:54323 |
+| Supabase API | http://127.0.0.1:54421 |
+| Supabase Studio | http://127.0.0.1:54423 |
+
+本项目使用 544xx 端口，避免与本机其他 Supabase 项目的 543xx 端口冲突。
 
 ### 准备环境变量
 
@@ -24,11 +26,11 @@ corepack pnpm install
 |---|---|
 | `APP_NAME` | 固定为 `tutlab`。 |
 | `APP_TZ` | 固定为 `Australia/Melbourne`，用于计算“今天”和课次时间。 |
-| `SUPABASE_URL` | 本地为 `http://127.0.0.1:54321`；远程在 Supabase Dashboard → Project Settings → API。 |
+| `SUPABASE_URL` | 本地为 `http://127.0.0.1:54421`；远程在 Supabase Dashboard → Project Settings → API。 |
 | `SUPABASE_ANON_KEY` | 同一 API 设置页的 anon public key，只允许前端使用。 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 同一 API 设置页的 service role secret，只注入 Worker。 |
 | `SUPABASE_JWT_SECRET` | Supabase Dashboard → API → JWT Settings，供 Worker 验证和签发 HS256 令牌。 |
-| `SUPABASE_DB_URL` | 本地默认 `postgresql://postgres:postgres@127.0.0.1:54322/postgres`；远程在 Database → Connection string。 |
+| `SUPABASE_DB_URL` | 本地默认 `postgresql://postgres:postgres@127.0.0.1:54422/postgres`；远程在 Database → Connection string。 |
 | `VITE_SUPABASE_URL` | 浏览器访问的 Supabase 地址，与 `SUPABASE_URL` 对应。 |
 | `VITE_SUPABASE_ANON_KEY` | 与 `SUPABASE_ANON_KEY` 相同的 anon key。 |
 | `VITE_API_BASE_URL` | 本地 `http://127.0.0.1:8787`；生产为 Worker 地址，不带 `/api`。 |
