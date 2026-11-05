@@ -1,4 +1,5 @@
 import {
+  addTrialRequestSchema,
   attendanceRequestSchema,
   createFeedbackRequestSchema,
   rawStatusSchema,
@@ -12,7 +13,7 @@ import {
   type SessionResponse,
   type SessionStatus,
 } from "@tutlab/shared";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { createRequestClient, currentAuth, type AppEnv, type AuthContext } from "../lib/auth";
@@ -49,6 +50,11 @@ interface RawRow {
   id: string;
   raw_text: string;
   status: string;
+}
+
+interface TrialStudentRow {
+  id: string;
+  service_owner_id: string;
 }
 
 const rpcResultSchema = z.object({
@@ -245,6 +251,22 @@ function attendanceError(message: string): ApiError {
   return new ApiError("VALIDATION_FAILED", 422, message);
 }
 
+function trialError(error: PostgrestError): ApiError | null {
+  const description = `${error.message} ${error.details}`;
+  if (description.includes("ALREADY_IN_ROSTER")
+      || (error.code === "23505" && description.includes("session_students_pkey"))) {
+    return new ApiError("VALIDATION_FAILED", 422, "该学生已在本节课名单中");
+  }
+  if (error.code === "23505" && description.includes("session_students_one_trial_per_student_idx")) {
+    return new ApiError("VALIDATION_FAILED", 422, "该学生已有试听记录，不能重复安排试听");
+  }
+  if (description.includes("NOT_FOUND")) return notFound();
+  if (description.includes("VALIDATION_FAILED")) {
+    return new ApiError("VALIDATION_FAILED", 422, "仅可将在读学生加入未来的待上课次");
+  }
+  return null;
+}
+
 export const sessionsRoute = new Hono<AppEnv>()
   .get("/:id", async (c) => {
     const id = parseInput(idParamSchema, c.req.param("id"));
@@ -296,6 +318,35 @@ export const sessionsRoute = new Hono<AppEnv>()
       feedback,
     };
     return c.json(response);
+  })
+  .post("/:id/trial", async (c) => {
+    const { profile } = currentAuth(c);
+    if (profile.role !== "admin" && profile.role !== "manager") throw forbidden();
+    const id = parseInput(idParamSchema, c.req.param("id"));
+    const body = await parseJson(addTrialRequestSchema, c.req.raw);
+    const supabase = createRequestClient(c);
+    const { data: studentData, error: studentError } = await supabase
+      .from("students")
+      .select("id,service_owner_id")
+      .eq("id", body.student_id)
+      .maybeSingle();
+    if (studentError) throw new Error(studentError.message);
+    if (!studentData) throw notFound();
+    const student = studentData as TrialStudentRow;
+    if (profile.role === "admin" && student.service_owner_id !== profile.id) throw forbidden();
+
+    const { data, error } = await supabase.rpc("add_trial_to_session", {
+      p_session_id: id,
+      p_student_id: body.student_id,
+    });
+    if (error) {
+      const mapped = trialError(error);
+      if (mapped) throw mapped;
+      throw new Error(error.message);
+    }
+    const sessionId = z.string().uuid().safeParse(data);
+    if (!sessionId.success) throw new Error("Invalid add trial function result");
+    return c.json({ session_id: sessionId.data }, 201);
   })
   .put("/:id/attendance", async (c) => {
     const id = parseInput(idParamSchema, c.req.param("id"));

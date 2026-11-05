@@ -36,7 +36,8 @@ TRIAL=$(curl -fsS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: app
 TRIAL_ID=$(printf '%s' "$TRIAL" | jq -r .session_id)
 [ -n "$TRIAL_ID" ] && [ "$TRIAL_ID" != null ]
 [ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT is_trial FROM public.session_students WHERE session_id='$TRIAL_ID' AND student_id='00000000-0000-4000-8000-000000001003';")" = t ]
-echo 'PASS admin schedules trial atomically'
+[ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT count(*) FROM public.session_students WHERE session_id='$TRIAL_ID';")" = 1 ]
+echo 'PASS new trial contains only the selected student'
 
 START2=$(TZ=Australia/Melbourne date -v+3d -v10H -v0M -v0S '+%Y-%m-%dT10:00:00%z' | sed -E 's/([+-][0-9]{2})([0-9]{2})$/\1:\2/')
 END2=$(TZ=Australia/Melbourne date -v+3d -v11H -v30M -v0S '+%Y-%m-%dT11:30:00%z' | sed -E 's/([+-][0-9]{2})([0-9]{2})$/\1:\2/')
@@ -53,10 +54,40 @@ COURSE=$(curl -fsS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: ap
 COURSE_ID=$(printf '%s' "$COURSE" | jq -r .session_id)
 [ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT concat_ws(':',is_new,is_trial) FROM public.session_students WHERE session_id='$COURSE_ID' AND student_id='00000000-0000-4000-8000-000000001004';")" = 't:f' ]
 [ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT count(*) FROM public.enrollments WHERE class_id='00000000-0000-4000-8000-000000000203' AND student_id='00000000-0000-4000-8000-000000001004' AND status='active';")" = 1 ]
-echo 'PASS course enrollment and roster creation'
+[ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT count(*) FROM public.session_students WHERE session_id='$COURSE_ID';")" = 1 ]
+echo 'PASS selected-student course contains only that student'
+
+START4=$(TZ=Australia/Melbourne date -v+4d -v10H -v0M -v0S '+%Y-%m-%dT10:00:00%z' | sed -E 's/([+-][0-9]{2})([0-9]{2})$/\1:\2/')
+END4=$(TZ=Australia/Melbourne date -v+4d -v11H -v30M -v0S '+%Y-%m-%dT11:30:00%z' | sed -E 's/([+-][0-9]{2})([0-9]{2})$/\1:\2/')
+WHOLE_CLASS=$(curl -fsS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/schedule" \
+  -d "{\"kind\":\"course\",\"class_id\":\"00000000-0000-4000-8000-000000000202\",\"starts_at\":\"$START4\",\"ends_at\":\"$END4\"}")
+WHOLE_CLASS_ID=$(printf '%s' "$WHOLE_CLASS" | jq -r .session_id)
+[ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT count(*) FROM public.session_students WHERE session_id='$WHOLE_CLASS_ID';")" = 6 ]
+echo 'PASS no-student course contains the whole class'
+
+JOINED=$(curl -fsS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/sessions/$COURSE_ID/trial" \
+  -d '{"student_id":"00000000-0000-4000-8000-000000001005"}')
+[ "$(printf '%s' "$JOINED" | jq -r .session_id)" = "$COURSE_ID" ]
+[ "$(docker exec supabase_db_tutlab psql -U postgres -d postgres -Atc "SELECT count(*) FROM public.session_students WHERE session_id='$COURSE_ID';")" = 2 ]
+DUPLICATE_JOIN=$(curl -sS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/sessions/$COURSE_ID/trial" \
+  -d '{"student_id":"00000000-0000-4000-8000-000000001005"}')
+[ "$(printf '%s' "$DUPLICATE_JOIN" | jq -r '.error.code')" = VALIDATION_FAILED ]
+LOCKED_JOIN=$(curl -sS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/sessions/00000000-0000-4000-8000-000000004004/trial" \
+  -d '{"student_id":"00000000-0000-4000-8000-000000001006"}')
+[ "$(printf '%s' "$LOCKED_JOIN" | jq -r '.error.code')" = VALIDATION_FAILED ]
+echo 'PASS join-trial updates an existing session only'
 
 CONFLICT=$(curl -sS -X POST -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/schedule" \
   -d "{\"kind\":\"course\",\"class_id\":\"00000000-0000-4000-8000-000000000203\",\"starts_at\":\"$START2\",\"ends_at\":\"$END2\"}")
 [ "$(printf '%s' "$CONFLICT" | jq -r '.error.code')" = VALIDATION_FAILED ]
 echo 'PASS teacher overlap rejection'
+
+[ "$(curl -fsS -H "Authorization: Bearer $BOSS" "$API/api/concerns" | jq -r '.items[]|select(.id=="balance:00000000-0000-4000-8000-000000001036")|(.dynamic|tostring)+":"+.level')" = 'true:risk' ]
+[ "$(curl -fsS -H "Authorization: Bearer $KIKI" "$API/api/concerns" | jq '[.items[]|select(.id=="balance:00000000-0000-4000-8000-000000001036")]|length')" = 0 ]
+docker exec supabase_db_tutlab psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO public.credit_ledger(student_id,delta,reason,balance_after) VALUES ('00000000-0000-4000-8000-000000001006',-17,'adjust',3);" >/dev/null
+[ "$(curl -fsS -H "Authorization: Bearer $KIKI" "$API/api/concerns" | jq -r '.items[]|select(.id=="balance:00000000-0000-4000-8000-000000001006")|(.dynamic|tostring)+":"+.level')" = 'true:watch' ]
+CODE=$(curl -sS -o /dev/null -w '%{http_code}' -X PATCH -H "Authorization: Bearer $KIKI" -H 'content-type: application/json' "$API/api/concerns/balance:00000000-0000-4000-8000-000000001006" -d '{"resolved":true}')
+[ "$CODE" = 404 ]
+echo 'PASS dynamic low-balance concerns and read-only behavior'
 echo 'ALL SCHEDULING API CHECKS PASSED'

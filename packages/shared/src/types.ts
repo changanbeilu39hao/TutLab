@@ -107,6 +107,7 @@ export interface ConcernItem {
   reason: string;
   class_name: string;
   owner: string;
+  dynamic: boolean;
 }
 
 export interface ConcernsResponse {

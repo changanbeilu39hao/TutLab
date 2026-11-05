@@ -91,6 +91,10 @@ export const scheduleRequestSchema = z.object({
   ends_at: z.string().datetime({ offset: true }),
 }).strict();
 
+export const addTrialRequestSchema = z.object({
+  student_id: z.string().uuid(),
+}).strict();
+
 export type FeedbackOutput = z.infer<typeof feedbackOutputSchema>;
 export type AttendanceRequest = z.infer<typeof attendanceRequestSchema>;
 export type CreateFeedbackRequest = z.infer<typeof createFeedbackRequestSchema>;

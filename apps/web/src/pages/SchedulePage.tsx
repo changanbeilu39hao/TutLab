@@ -1,7 +1,8 @@
-import type { ScheduleKind } from "@tutlab/shared";
+import type { ScheduleKind, ScheduleSession } from "@tutlab/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/DataState";
+import { JoinTrialModal } from "../components/JoinTrialModal";
 import { ScheduleModal } from "../components/ScheduleModal";
 import { useAuth } from "../lib/auth";
 import {
@@ -18,6 +19,7 @@ export function SchedulePage() {
   const { profile } = useAuth();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(melbourneToday()));
   const [scheduleKind, setScheduleKind] = useState<ScheduleKind | null>(null);
+  const [joinTrialSession, setJoinTrialSession] = useState<ScheduleSession | null>(null);
   const weekEnd = shiftDate(weekStart, 6);
   const queryEnd = shiftDate(weekStart, 7);
   const scheduleQuery = useSchedule(weekStart, queryEnd);
@@ -100,6 +102,7 @@ export function SchedulePage() {
                   {daySessions.map((session) => {
                     const ownTeacherSession =
                       profile?.role === "teacher" && profile.id === session.teacher_id;
+                    const canJoinTrial = canManage && session.status === "planned" && Date.parse(session.starts_at) > Date.now();
                     return (
                       <article
                         className={`schedule-session${ownTeacherSession ? " schedule-own-session" : ""}${session.status === "done" ? " schedule-completed-session" : ""}`}
@@ -116,10 +119,20 @@ export function SchedulePage() {
                           <span>{session.campus}</span>
                           <span>{session.student_count} 人</span>
                         </div>
-                        {session.status === "cancelled" || ownTeacherSession ? (
+                        {session.status === "cancelled" || ownTeacherSession || canJoinTrial ? (
                           <div className="row schedule-session-footer">
                             {session.status === "cancelled" ? (
                               <span className="badge badge-danger">已取消</span>
+                            ) : null}
+                            {canJoinTrial ? (
+                              <button
+                                className="btn btn-sm schedule-session-join-trial"
+                                type="button"
+                                onClick={() => setJoinTrialSession(session)}
+                                aria-label={`加入 ${session.class_name} 试听`}
+                              >
+                                加入试听
+                              </button>
                             ) : null}
                             {ownTeacherSession ? (
                               <Link
@@ -148,6 +161,12 @@ export function SchedulePage() {
           from={weekStart}
           to={queryEnd}
           onClose={() => setScheduleKind(null)}
+        />
+      ) : null}
+      {joinTrialSession ? (
+        <JoinTrialModal
+          session={joinTrialSession}
+          onClose={() => setJoinTrialSession(null)}
         />
       ) : null}
     </>

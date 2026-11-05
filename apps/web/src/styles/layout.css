@@ -295,11 +295,14 @@
   margin-top: 10px;
 }
 
-.schedule-session-open {
+.schedule-session-open,
+.schedule-session-join-trial {
   justify-content: center;
+  white-space: nowrap;
 }
 
-.schedule-session-footer .schedule-session-open:only-child {
+.schedule-session-footer .schedule-session-open:only-child,
+.schedule-session-footer .schedule-session-join-trial:only-child {
   margin-left: auto;
 }
 
@@ -486,6 +489,15 @@
   .concern-card > .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .schedule-session-footer .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .schedule-session-footer .btn:only-child {
+    margin-left: 0;
   }
 }
 

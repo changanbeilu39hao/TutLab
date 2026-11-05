@@ -56,19 +56,21 @@ export function ConcernsPage() {
                 <p className="page-desc">{concern.class_name} · 学管 {concern.owner}</p>
               </div>
             </div>
-            <button
-              className="btn"
-              type="button"
-              disabled={resolveMutation.isPending}
-              onClick={() => {
-                resolveMutation.reset();
-                resolveMutation.mutate(concern.id);
-              }}
-            >
-              {resolveMutation.isPending && resolveMutation.variables === concern.id
-                ? "处理中…"
-                : "已处理"}
-            </button>
+            {!concern.dynamic ? (
+              <button
+                className="btn"
+                type="button"
+                disabled={resolveMutation.isPending}
+                onClick={() => {
+                  resolveMutation.reset();
+                  resolveMutation.mutate(concern.id);
+                }}
+              >
+                {resolveMutation.isPending && resolveMutation.variables === concern.id
+                  ? "处理中…"
+                  : "已处理"}
+              </button>
+            ) : null}
           </article>
         ))}
       </div>
