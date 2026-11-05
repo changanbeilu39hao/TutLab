@@ -1,0 +1,7 @@
+name = "tutlab"
+pages_build_output_dir = "./dist"
+compatibility_date = "2024-12-18"
+
+[[services]]
+binding = "API"
+service = "tutlab-api"

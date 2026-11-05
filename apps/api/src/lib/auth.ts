@@ -1,7 +1,7 @@
 import { roleSchema, type Profile } from "@tutlab/shared";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { SignJWT, decodeJwt, jwtVerify, type JWTPayload } from "jose";
 import { createAdminClient } from "./supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { unauthorized } from "./errors";
@@ -41,6 +41,32 @@ export type AppEnv = {
 type AppContext = Context<AppEnv>;
 
 let modeCheck: Promise<"jwt" | "header"> | undefined;
+
+const AUTH_CACHE_TTL_MS = 60_000;
+const AUTH_CACHE_LIMIT = 100;
+const authCache = new Map<string, { auth: AuthContext; expiresAt: number }>();
+
+function cachedAuth(token: string): AuthContext | null {
+  const cached = authCache.get(token);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    authCache.delete(token);
+    return null;
+  }
+  return cached.auth;
+}
+
+function cacheAuth(token: string, auth: AuthContext): void {
+  if (auth.actor) return;
+  if (authCache.size >= AUTH_CACHE_LIMIT) {
+    const oldest = authCache.keys().next().value;
+    if (typeof oldest === "string") authCache.delete(oldest);
+  }
+  const now = Date.now();
+  const tokenExpiry = typeof auth.claims.exp === "number" ? auth.claims.exp * 1000 : now + AUTH_CACHE_TTL_MS;
+  const expiresAt = Math.min(now + AUTH_CACHE_TTL_MS, tokenExpiry);
+  if (expiresAt > now) authCache.set(token, { auth, expiresAt });
+}
 
 function secretKey(env: WorkerEnv): Uint8Array {
   return new TextEncoder().encode(env.SUPABASE_JWT_SECRET);
@@ -116,54 +142,38 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const token = header.slice(7).trim();
   if (!token) throw unauthorized();
 
-  const mode = await authMode(c.env);
+  const cached = cachedAuth(token);
+  if (cached) {
+    c.set("auth", cached);
+    await next();
+    return;
+  }
+
   let claims: JWTPayload;
   let subject: string;
-
-  if (mode === "jwt") {
-    try {
-      const verified = await jwtVerify(token, secretKey(c.env), { audience: "authenticated" });
-      claims = verified.payload;
-      if (!claims.sub) throw new Error("Missing subject");
-      subject = claims.sub;
-    } catch {
-      const supabase = createAdminClient(c.env);
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) {
-        console.error("Supabase user verification failed", error?.message ?? "user not found");
-        throw unauthorized();
-      }
-      subject = data.user.id;
-      claims = { sub: subject };
+  try {
+    const verified = await jwtVerify(token, secretKey(c.env), { audience: "authenticated" });
+    if (!verified.payload.sub) throw new Error("Missing subject");
+    claims = verified.payload;
+    subject = verified.payload.sub;
+  } catch {
+    const supabase = createAdminClient(c.env);
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      console.error("Supabase user verification failed", error?.message ?? "user not found");
+      throw unauthorized();
     }
-  } else {
-    let locallyVerified: JWTPayload | null = null;
-    try {
-      const verified = await jwtVerify(token, secretKey(c.env), { audience: "authenticated" });
-      locallyVerified = verified.payload;
-    } catch {
-      locallyVerified = null;
-    }
-
-    if (locallyVerified?.act && locallyVerified.sub) {
-      claims = locallyVerified;
-      subject = locallyVerified.sub;
-    } else {
-      const supabase = createAdminClient(c.env);
-      const { data, error } = await supabase.auth.getUser(token);
-      if (error || !data.user) {
-        console.error("Supabase user verification failed", error?.message ?? "user not found");
-        throw unauthorized();
-      }
-      subject = data.user.id;
-      claims = { sub: subject };
-    }
+    subject = data.user.id;
+    claims = { ...decodeJwt(token), sub: subject };
   }
 
   const actor = typeof claims.act === "string" ? claims.act : null;
   const jti = typeof claims.jti === "string" ? claims.jti : null;
+  const mode = actor ? await authMode(c.env) : "jwt";
   const profile = await loadProfile(c.env, subject);
-  c.set("auth", { profile, claims, actor, jti, mode });
+  const auth: AuthContext = { profile, claims, actor, jti, mode };
+  cacheAuth(token, auth);
+  c.set("auth", auth);
   if (actor) c.header("x-impersonated-by", actor);
   await next();
 });

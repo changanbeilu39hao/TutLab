@@ -98,7 +98,7 @@ seed 会按 Melbourne 当天生成 Kevin 的 15:00、17:00 两节课和 Lisa 的
 
 ### 部署
 
-生产 Web 地址为 `https://tutlab.pages.dev`（若名称被占用，以 Cloudflare 实际分配域名为准）；API 为 `https://tutlab-api.<account-subdomain>.workers.dev`。部署后把 Web 的 `VITE_API_BASE_URL` 设置为 Worker 源地址，并重新构建。
+当前生产地址：Web 为 `https://tutlab.pages.dev`，同源 API 为 `https://tutlab.pages.dev/api`，Supabase 为 `https://humaqrgedzyscdpnayxb.supabase.co`。Pages Function 通过 Service Binding 在 Cloudflare 内部调用 `tutlab-api`，避免公网中转以及部分网络无法访问 `workers.dev` 的问题。重新部署 Web 时将 `VITE_API_BASE_URL` 留空并重新构建。
 
 ```bash
 # API secrets
@@ -108,10 +108,11 @@ corepack pnpm wrangler secret put SUPABASE_JWT_SECRET
 corepack pnpm wrangler secret put DEEPSEEK_API_KEY
 corepack pnpm wrangler deploy
 
-# Web
+# Web（VITE_API_BASE_URL 留空，使用 Pages 同源代理）
 cd ../..
 corepack pnpm --filter web build
-corepack pnpm wrangler pages deploy apps/web/dist --project-name=tutlab
+cd apps/web
+../api/node_modules/.bin/wrangler pages deploy dist --project-name=tutlab --branch=main
 ```
 
 生产 Supabase 需先应用 `supabase/migrations`，演示环境才执行 `supabase/seed.sql`。

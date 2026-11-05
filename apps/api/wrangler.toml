@@ -4,8 +4,9 @@ compatibility_date = "2024-12-18"
 
 [vars]
 APP_TZ = "Australia/Melbourne"
+SUPABASE_URL = "https://humaqrgedzyscdpnayxb.supabase.co"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_MODEL = "DeepSeek-V4.1-Flash-1017"
 LLM_TIMEOUT_MS = "12000"
 LLM_MAX_TOKENS = "1200"
 LLM_TEMPERATURE = "0.2"
