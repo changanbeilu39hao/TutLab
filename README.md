@@ -40,9 +40,9 @@ corepack pnpm install
 | `CF_WORKER_NAME` | 固定为 `tutlab-api`。 |
 | `DEEPSEEK_API_KEY` | https://platform.deepseek.com → API Keys，只注入 Worker。留空可演示 fallback。 |
 | `DEEPSEEK_BASE_URL` | 默认 `https://api.deepseek.com`。 |
-| `DEEPSEEK_MODEL` | 默认 `deepseek-chat`，可按账户可用模型调整。 |
+| `DEEPSEEK_MODEL` | 默认 `deepseek-flash`，可按账户可用模型调整。 |
 | `LLM_TIMEOUT_MS` | LLM 请求超时，默认 12000 毫秒。 |
-| `LLM_MAX_TOKENS` | LLM 最大输出 token，默认 1200。 |
+| `LLM_MAX_TOKENS` | LLM 最大输出 token，默认 2000。 |
 | `LLM_TEMPERATURE` | 默认 0.2。 |
 | `IMPERSONATION_TTL_MIN` | 模拟令牌有效分钟数，默认 30，不能续期。 |
 | `WEB_PORT` / `API_PORT` | 本地端口，默认 5173 / 8787。 |
