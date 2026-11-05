@@ -1,8 +1,9 @@
 import { roleSchema, type Profile } from "@tutlab/shared";
-import type { Context, Next } from "hono";
+import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { createAdminClient } from "./supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { unauthorized } from "./errors";
 
 export interface WorkerEnv {
@@ -137,7 +138,6 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     if (locallyVerified?.act && locallyVerified.sub) {
       claims = locallyVerified;
       subject = locallyVerified.sub;
-      c.req.header("x-act-as");
     } else {
       const supabase = createAdminClient(c.env);
       const { data, error } = await supabase.auth.getUser(token);
@@ -174,10 +174,9 @@ export function currentAuth(c: AppContext): AuthContext {
   return c.get("auth");
 }
 
-export function requireManager(profile: Profile): void {
-  if (profile.role !== "admin" && profile.role !== "manager") {
-    throw new Error("Manager role required");
-  }
+export function createRequestClient(c: AppContext): SupabaseClient {
+  const auth = currentAuth(c);
+  const actAs = auth.mode === "header" && auth.actor ? auth.profile.id : undefined;
+  return createAdminClient(c.env, actAs);
 }
 
-export type AuthNext = Next;

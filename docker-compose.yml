@@ -1,0 +1,35 @@
+services:
+  web:
+    image: node:22-bookworm
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm --filter web dev -- --host 0.0.0.0"
+
+  api:
+    image: node:22-bookworm
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    ports:
+      - "${API_PORT:-8787}:8787"
+    environment:
+      SUPABASE_URL: http://host.docker.internal:54321
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      APP_TZ: ${APP_TZ:-Australia/Melbourne}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-12000}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1200}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      IMPERSONATION_TTL_MIN: ${IMPERSONATION_TTL_MIN:-30}
+      DEBUG_LLM: ${DEBUG_LLM:-false}
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm --filter api dev -- --ip 0.0.0.0"
