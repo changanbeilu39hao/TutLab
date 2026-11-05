@@ -1,4 +1,4 @@
-import type { ScheduleKind, SessionStatus } from "@tutlab/shared";
+import type { ScheduleKind } from "@tutlab/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/DataState";
@@ -13,12 +13,6 @@ import {
   startOfWeek,
 } from "../lib/date";
 import { useSchedule } from "../lib/queries";
-
-const statusText: Record<SessionStatus, string> = {
-  planned: "待上课",
-  done: "已完成",
-  cancelled: "已取消",
-};
 
 export function SchedulePage() {
   const { profile } = useAuth();
@@ -108,7 +102,7 @@ export function SchedulePage() {
                       profile?.role === "teacher" && profile.id === session.teacher_id;
                     return (
                       <article
-                        className={`schedule-session${ownTeacherSession ? " schedule-own-session" : ""}`}
+                        className={`schedule-session${ownTeacherSession ? " schedule-own-session" : ""}${session.status === "done" ? " schedule-completed-session" : ""}`}
                         key={session.id}
                       >
                         <div className="schedule-session-time">
@@ -122,22 +116,22 @@ export function SchedulePage() {
                           <span>{session.campus}</span>
                           <span>{session.student_count} 人</span>
                         </div>
-                        <div className="row schedule-session-footer">
-                          <span
-                            className={`badge${session.status === "done" ? " badge-success" : session.status === "cancelled" ? " badge-danger" : ""}`}
-                          >
-                            {statusText[session.status]}
-                          </span>
-                          {ownTeacherSession ? (
-                            <Link
-                              className="btn btn-sm schedule-session-open"
-                              to={`/session/${session.id}`}
-                              aria-label={`进入 ${session.class_name} 课次`}
-                            >
-                              进入课次
-                            </Link>
-                          ) : null}
-                        </div>
+                        {session.status === "cancelled" || ownTeacherSession ? (
+                          <div className="row schedule-session-footer">
+                            {session.status === "cancelled" ? (
+                              <span className="badge badge-danger">已取消</span>
+                            ) : null}
+                            {ownTeacherSession ? (
+                              <Link
+                                className="btn btn-sm schedule-session-open"
+                                to={`/session/${session.id}`}
+                                aria-label={`进入 ${session.class_name} 课次`}
+                              >
+                                进入课次
+                              </Link>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </article>
                     );
                   })}

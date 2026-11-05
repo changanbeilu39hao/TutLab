@@ -261,6 +261,12 @@
   border-radius: var(--radius);
 }
 
+.schedule-completed-session {
+  padding: 10px;
+  background: var(--panel-2);
+  border-radius: var(--radius);
+}
+
 .schedule-session-time {
   margin-bottom: 6px;
   font-weight: 600;
@@ -290,6 +296,10 @@
 
 .schedule-session-open {
   justify-content: center;
+}
+
+.schedule-session-footer .schedule-session-open:only-child {
+  margin-left: auto;
 }
 
 .schedule-empty-day {
