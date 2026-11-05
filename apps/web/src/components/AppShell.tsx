@@ -17,7 +17,7 @@ function ImpersonationBanner() {
   const [now, setNow] = useState(Date.now());
   const endMutation = useMutation({
     mutationFn: endImpersonation,
-    onSuccess: () => navigate("/concerns", { replace: true }),
+    onSuccess: () => navigate("/schedule", { replace: true }),
   });
 
   useEffect(() => {
@@ -145,9 +145,13 @@ export function AppShell() {
   const isTeacher = profile?.role === "teacher";
   const pageName = location.pathname.startsWith("/session/")
     ? "课次详情"
-    : isTeacher
+    : location.pathname === "/today"
       ? "今天"
-      : "需关注";
+      : location.pathname === "/schedule"
+        ? "排课日历"
+        : location.pathname === "/students"
+          ? "学生"
+          : "需关注";
 
   return (
     <div className="app-shell">
@@ -163,14 +167,29 @@ export function AppShell() {
           >
             今天
           </NavLink>
-        ) : (
-          <NavLink
-            to="/concerns"
-            className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
-          >
-            需关注
-          </NavLink>
-        )}
+        ) : null}
+        <NavLink
+          to="/schedule"
+          className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+        >
+          排课日历
+        </NavLink>
+        {!isTeacher ? (
+          <>
+            <NavLink
+              to="/students"
+              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+            >
+              学生
+            </NavLink>
+            <NavLink
+              to="/concerns"
+              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+            >
+              需关注
+            </NavLink>
+          </>
+        ) : null}
         <div className="sidebar-footer">
           <span className="avatar">{profile?.display_name.slice(0, 1) ?? "·"}</span>
           <span>

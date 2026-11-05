@@ -74,7 +74,26 @@ export const todayQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
+const calendarDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const scheduleQuerySchema = z.object({
+  from: calendarDateSchema,
+  to: calendarDateSchema,
+}).strict();
+
+export const scheduleKindSchema = z.enum(["trial", "course"]);
+
+export const scheduleRequestSchema = z.object({
+  kind: scheduleKindSchema,
+  class_id: z.string().uuid(),
+  student_id: z.string().uuid().optional(),
+  starts_at: z.string().datetime({ offset: true }),
+  ends_at: z.string().datetime({ offset: true }),
+}).strict();
+
 export type FeedbackOutput = z.infer<typeof feedbackOutputSchema>;
 export type AttendanceRequest = z.infer<typeof attendanceRequestSchema>;
 export type CreateFeedbackRequest = z.infer<typeof createFeedbackRequestSchema>;
 export type UpdateFeedbackRequest = z.infer<typeof updateFeedbackRequestSchema>;
+export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
+export type ScheduleKind = z.infer<typeof scheduleKindSchema>;

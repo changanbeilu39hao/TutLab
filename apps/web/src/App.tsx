@@ -7,7 +7,9 @@ import { useAuth } from "./lib/auth";
 import { homeForRole } from "./lib/navigation";
 import { ConcernsPage } from "./pages/ConcernsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { SchedulePage } from "./pages/SchedulePage";
 import { SessionPage } from "./pages/SessionPage";
+import { StudentsPage } from "./pages/StudentsPage";
 import { TodayPage } from "./pages/TodayPage";
 
 function ProtectedRoute() {
@@ -67,6 +69,15 @@ export function App() {
             element={
               <RoleRoute roles={["teacher"]}>
                 <TodayPage />
+              </RoleRoute>
+            }
+          />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route
+            path="/students"
+            element={
+              <RoleRoute roles={["admin", "manager"]}>
+                <StudentsPage />
               </RoleRoute>
             }
           />

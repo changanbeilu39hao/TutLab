@@ -8,6 +8,7 @@ export function Modal({
   onConfirm,
   onCancel,
   pending = false,
+  confirmDisabled = false,
 }: {
   title: string;
   description: string;
@@ -16,6 +17,7 @@ export function Modal({
   onConfirm: () => void;
   onCancel: () => void;
   pending?: boolean;
+  confirmDisabled?: boolean;
 }) {
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -46,7 +48,7 @@ export function Modal({
             className="btn btn-primary"
             type="button"
             onClick={onConfirm}
-            disabled={pending}
+            disabled={pending || confirmDisabled}
             autoFocus
           >
             {pending ? "处理中…" : confirmLabel}

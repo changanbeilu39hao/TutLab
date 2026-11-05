@@ -1,8 +1,11 @@
 import {
+  scheduleQuerySchema,
   todayQuerySchema,
   type ConcernsResponse,
   type ImpersonationTargetsResponse,
+  type ScheduleResponse,
   type SessionResponse,
+  type StudentsResponse,
   type TodayResponse,
 } from "@tutlab/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +35,29 @@ export function useSession(sessionId: string | undefined) {
     queryKey: ["session", sessionId, impersonation?.jti ?? "self"],
     enabled: Boolean(sessionId),
     queryFn: () => request<SessionResponse>(`/api/sessions/${sessionId ?? ""}`),
+    retry: retryRequest,
+  });
+}
+
+export function useStudents() {
+  const { request, impersonation } = useAuth();
+  return useQuery({
+    queryKey: ["students", impersonation?.jti ?? "self"],
+    queryFn: () => request<StudentsResponse>("/api/students"),
+    retry: retryRequest,
+  });
+}
+
+export function useSchedule(from: string, to: string) {
+  const { request, impersonation } = useAuth();
+  return useQuery({
+    queryKey: ["schedule", from, to, impersonation?.jti ?? "self"],
+    queryFn: () => {
+      const query = scheduleQuerySchema.parse({ from, to });
+      return request<ScheduleResponse>(
+        `/api/schedule?from=${encodeURIComponent(query.from)}&to=${encodeURIComponent(query.to)}`,
+      );
+    },
     retry: retryRequest,
   });
 }

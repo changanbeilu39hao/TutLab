@@ -9,10 +9,12 @@ import type {
   rawStatusSchema,
   roleSchema,
   sessionStatusSchema,
+  studentStatusSchema,
 } from "./schemas";
 
 export type Role = z.infer<typeof roleSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
+export type StudentStatus = z.infer<typeof studentStatusSchema>;
 export type AttendanceKind = z.infer<typeof attendanceKindSchema>;
 export type Mastery = z.infer<typeof masterySchema>;
 export type ConcernLevel = z.infer<typeof concernLevelSchema>;
@@ -145,6 +147,51 @@ export interface ApiErrorBody {
     message: string;
     details: Record<string, unknown>;
   };
+}
+
+export interface StudentListItem {
+  id: string;
+  name: string;
+  year_level: number;
+  status: StudentStatus;
+  balance: number;
+  class_names: string[];
+}
+
+export interface StudentsResponse {
+  items: StudentListItem[];
+}
+
+export interface ScheduleClass {
+  id: string;
+  name: string;
+  subject: string;
+  level: string;
+  teacher_id: string;
+  teacher_name: string;
+  campus: string;
+}
+
+export interface ScheduleSession {
+  id: string;
+  class_id: string;
+  class_name: string;
+  subject: string;
+  level: string;
+  teacher_id: string;
+  teacher_name: string;
+  campus: string;
+  starts_at: string;
+  ends_at: string;
+  status: SessionStatus;
+  student_count: number;
+}
+
+export interface ScheduleResponse {
+  from: string;
+  to: string;
+  sessions: ScheduleSession[];
+  classes: ScheduleClass[];
 }
 
 export type FeedbackSchema = typeof feedbackOutputSchema;

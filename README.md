@@ -2,6 +2,8 @@
 
 tutlab 的课后 30 秒垂直切片：教师查看今日课次、完成点名与课时扣减，再把一段课堂口述整理成家长草稿、学管关注和教学记录。管理员可以临时切换到同校区教师视角，所有模拟操作保留审计记录。
 
+向上衔接的一步是试听与排课：admin 在 `/students` 管理本人名下的学生，manager 可查看全部学生；admin/manager 可安排试听和正式课。`/schedule` 是所有角色共享的 7 天日历，admin/manager 登录后首先进入日历。试听只加入课次名单且不扣课时，正式课可同时将学生加入班级；教师时间冲突由数据库约束阻止。
+
 ## 1. 如何跑起来
 
 ### 本地地址
@@ -33,7 +35,7 @@ corepack pnpm install
 | `SUPABASE_DB_URL` | 本地默认 `postgresql://postgres:postgres@127.0.0.1:54422/postgres`；远程在 Database → Connection string。 |
 | `VITE_SUPABASE_URL` | 浏览器访问的 Supabase 地址，与 `SUPABASE_URL` 对应。 |
 | `VITE_SUPABASE_ANON_KEY` | 与 `SUPABASE_ANON_KEY` 相同的 anon key。 |
-| `VITE_API_BASE_URL` | 本地 `http://127.0.0.1:8787`；生产为 Worker 地址，不带 `/api`。 |
+| `VITE_API_BASE_URL` | 本地 `http://127.0.0.1:8787`；生产留空，使用 Pages 同源 `/api`。 |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard 右侧的账户 ID，仅部署需要。 |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API Tokens；Pages/Workers Edit，绑定自定义域名时再增加 Zone DNS Edit。 |
 | `CF_PAGES_PROJECT` | 固定为 `tutlab`。 |
@@ -251,6 +253,14 @@ curl -sS -X POST -H "Authorization: Bearer $KEVIN" \
 - 单老师视角没有做“代课”，请假走停课
 
 ## 提交前检查
+
+排课专项回归（先启动本地 Supabase 和 API）：
+
+```bash
+bash scripts/verify-scheduling.sh
+```
+
+完整检查：
 
 ```bash
 corepack pnpm -r typecheck

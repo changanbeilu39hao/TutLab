@@ -7,6 +7,8 @@ import { todayRoute } from "./routes/today";
 import { sessionsRoute } from "./routes/sessions";
 import { concernsRoute } from "./routes/concerns";
 import { impersonateRoute } from "./routes/impersonate";
+import { studentsRoute } from "./routes/students";
+import { scheduleRoute } from "./routes/schedule";
 
 export const app = new Hono<AppEnv>();
 
@@ -23,6 +25,8 @@ app.route("/api/today", todayRoute);
 app.route("/api/sessions", sessionsRoute);
 app.route("/api/concerns", concernsRoute);
 app.route("/api/impersonate", impersonateRoute);
+app.route("/api/students", studentsRoute);
+app.route("/api/schedule", scheduleRoute);
 
 app.notFound((c) => c.json(new ApiError("NOT_FOUND", 404).body(), 404));
 app.onError((error, c) => {

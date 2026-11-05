@@ -202,6 +202,120 @@
   to { opacity: 1; }
 }
 
+.schedule-actions,
+.schedule-weekbar,
+.schedule-day-heading,
+.schedule-session-footer {
+  flex-wrap: wrap;
+}
+
+.schedule-actions {
+  justify-content: flex-end;
+}
+
+.schedule-weekbar {
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.schedule-day {
+  min-width: 0;
+  padding: 12px;
+}
+
+.schedule-day-heading {
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.schedule-day-heading .card-title {
+  margin-bottom: 12px;
+}
+
+.schedule-day-sessions {
+  display: grid;
+  gap: 12px;
+}
+
+.schedule-session {
+  min-width: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.schedule-session-time {
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-session-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.schedule-session-meta {
+  display: grid;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.schedule-session-footer {
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.schedule-session-open {
+  justify-content: center;
+}
+
+.schedule-empty-day {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.students-table {
+  table-layout: fixed;
+}
+
+.students-table th:last-child {
+  width: 190px;
+}
+
+.students-table tbody tr {
+  cursor: default;
+}
+
+.students-table td {
+  overflow-wrap: anywhere;
+}
+
+.student-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.student-actions .btn {
+  justify-content: center;
+  white-space: nowrap;
+}
+
 @media (max-width: 1100px) {
   .summary-grid,
   .feedback-grid {
@@ -258,6 +372,72 @@
   .attendance-confirm {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .schedule-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .schedule-day {
+    padding: 16px;
+  }
+
+  .schedule-actions {
+    width: 100%;
+  }
+
+  .schedule-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .schedule-weekbar {
+    align-items: flex-start;
+  }
+
+  .students-table,
+  .students-table tbody,
+  .students-table tr,
+  .students-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .students-table thead {
+    display: none;
+  }
+
+  .students-table tbody tr {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .students-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .students-table td {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: none;
+  }
+
+  .students-table td::before {
+    content: attr(data-label);
+    color: var(--text-2);
+    font-size: 12px;
+  }
+
+  .student-actions {
+    width: 100%;
+  }
+
+  .student-actions .btn {
+    flex: 1;
   }
 }
 
